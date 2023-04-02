@@ -6,6 +6,8 @@ const TodoSchema = mongoose.Schema({
     required: true,
   },
   deadline: {
-    type: mongoose.SchemaTypes.String,
+    type: mongoose.SchemaTypes.Date,
   },
 });
+
+module.exports = mongoose.model("Todo", TodoSchema);
