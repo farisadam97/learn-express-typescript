@@ -1,24 +1,44 @@
 const Todo = require("../Model/TodoModel");
 const moment = require("moment");
 const addTodo = async (req, res) => {
-  if (!req.body.description) {
+  const { description, deadline } = req.body;
+  if (!description) {
     res.status(400).send({
       message: "Description needs to be filled!",
     });
   } else {
-    const date = new Date(req.body.deadline);
-    const dateIsValid = date instanceof Date && isFinite(date.getTime());
-    if (dateIsValid) {
-      const newTodo = await Todo.create({
-        description: req.body.description,
-        deadline: date,
-      });
-      res.status(201).send({
-        message: "To do created!",
-      });
-    } else {
-      res.status(400).send({
-        message: "Deadline is not a date",
+    try {
+      const date = new Date(deadline);
+      const today = new Date();
+      const dateIsValid = date instanceof Date && isFinite(date.getTime());
+      if (dateIsValid) {
+        if (date < today) {
+          return res.status(400).send({
+            message: "Deadline must not before today's date!",
+          });
+        }
+
+        if (description.length > 50) {
+          return res.status(400).send({
+            message: "Max length for description is 60 characters",
+          });
+        }
+
+        const newTodo = await Todo.create({
+          description: description,
+          deadline: date,
+        });
+        return res.status(201).send({
+          message: "To do created!",
+        });
+      } else {
+        return res.status(400).send({
+          message: "Deadline is not a date",
+        });
+      }
+    } catch (error) {
+      return res.status(400).send({
+        message: error,
       });
     }
   }
@@ -44,4 +64,24 @@ const getTodos = async (req, res) => {
   });
 };
 
-module.exports = { addTodo, getTodos };
+const updateTodos = async (req, res) => {
+  const { id, description } = req.body;
+  try {
+    const todo = await Todo.findByIdAndUpdate(
+      id,
+      { description },
+      { new: true }
+    );
+    if (!todo) {
+      return res.status(404).send({ error: "Product not found" });
+    }
+    res.status(200).send({
+      message: "Todo updated",
+      todo: todo,
+    });
+  } catch (error) {
+    res.status(500).send(error);
+  }
+};
+
+module.exports = { addTodo, getTodos, updateTodos };
