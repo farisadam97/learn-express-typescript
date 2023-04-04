@@ -65,15 +65,20 @@ const getTodos = async (req, res) => {
 };
 
 const updateTodos = async (req, res) => {
-  const { id, description } = req.body;
+  const { id } = req.params;
+  const { description, isDone, deadline } = req.body;
   try {
     const todo = await Todo.findByIdAndUpdate(
       id,
-      { description },
+      {
+        ...(deadline && { deadline }),
+        ...(description && { description }),
+        ...(isDone && { isDone }),
+      },
       { new: true }
     );
     if (!todo) {
-      return res.status(404).send({ error: "Product not found" });
+      return res.status(404).send({ error: "Todo not found" });
     }
     res.status(200).send({
       message: "Todo updated",
@@ -84,4 +89,18 @@ const updateTodos = async (req, res) => {
   }
 };
 
-module.exports = { addTodo, getTodos, updateTodos };
+const deleteTodo = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await Todo.deleteOne({ _id: id });
+
+    return res.status(200).send({
+      message: "Item deleted!",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Error deleting item" });
+  }
+};
+
+module.exports = { addTodo, getTodos, updateTodos, deleteTodo };
